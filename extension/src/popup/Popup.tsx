@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { UploadCloud, CheckCircle2, AlertTriangle, ArrowRight, Settings, FileText, Sparkles } from 'lucide-react';
+import { UploadCloud, Settings, Sparkles } from 'lucide-react';
 
 export default function Popup() {
-  const [apiUrl, setApiUrl] = useState('http://localhost:8000');
+  const [apiUrl, setApiUrl] = useState('http://localhost:8001');
   const [parsedData, setParsedData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
@@ -11,7 +11,6 @@ export default function Popup() {
   const [selectedCandidate, setSelectedCandidate] = useState(0);
 
   useEffect(() => {
-    // Load cached parsed data and settings if present
     if (typeof chrome !== 'undefined' && chrome.storage?.local) {
       chrome.storage.local.get(['cachedResume', 'parserApiUrl', 'siteEnabled'], (res) => {
         if (res.cachedResume) setParsedData(res.cachedResume);
@@ -31,34 +30,43 @@ export default function Popup() {
     const formData = new FormData();
     formData.append('file', file);
 
-    try {
-      const res = await fetch(`${apiUrl}/parse/file`, {
-        method: 'POST',
-        body: formData,
-      });
+    // Try primary port then fallback
+    const targetUrls = [apiUrl, 'http://localhost:8001', 'http://localhost:8000'];
+    let success = false;
 
-      if (!res.ok) {
-        throw new Error(`Server returned status ${res.status}`);
+    for (const url of targetUrls) {
+      try {
+        const res = await fetch(`${url}/parse/file`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setParsedData(data);
+          setStatusMsg('Parsed successfully!');
+          setApiUrl(url);
+
+          if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+            chrome.storage.local.set({ cachedResume: data, parserApiUrl: url });
+          }
+          success = true;
+          break;
+        }
+      } catch {
+        continue;
       }
-
-      const data = await res.json();
-      setParsedData(data);
-      setStatusMsg('Parsed successfully!');
-
-      if (typeof chrome !== 'undefined' && chrome.storage?.local) {
-        chrome.storage.local.set({ cachedResume: data });
-      }
-    } catch (err: any) {
-      setStatusMsg(`Error: ${err.message}. Ensure backend is running.`);
-    } finally {
-      setLoading(false);
     }
+
+    if (!success) {
+      setStatusMsg(`Could not connect to parser backend on ${apiUrl}. Ensure the server is running.`);
+    }
+    setLoading(false);
   };
 
   const handleAutofill = async () => {
     if (!parsedData) return;
 
-    // Apply selected name candidate if changed
     const currentData = { ...parsedData };
     if (currentData.name?.candidate_parses?.[selectedCandidate]) {
       const cand = currentData.name.candidate_parses[selectedCandidate];
@@ -151,7 +159,7 @@ export default function Popup() {
           </div>
 
           {statusMsg && (
-            <div style={{ fontSize: '12px', marginBottom: '10px', color: statusMsg.includes('Error') ? '#d93025' : '#1e8e3e' }}>
+            <div style={{ fontSize: '12px', marginBottom: '10px', color: statusMsg.includes('Could not') ? '#d93025' : '#1e8e3e' }}>
               {statusMsg}
             </div>
           )}
