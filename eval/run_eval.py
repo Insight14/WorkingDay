@@ -2,8 +2,14 @@ import json
 import os
 import sys
 
-# Add parser src to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "parser", "src")))
+# Ensure project root, parser/src, and parser directories are in sys.path automatically
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+PARSER_SRC = os.path.join(PROJECT_ROOT, "parser", "src")
+PARSER_DIR = os.path.join(PROJECT_ROOT, "parser")
+
+for p in [PROJECT_ROOT, PARSER_SRC, PARSER_DIR]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
 
 from workingday_parser.extract.extractor import WorkingDayExtractor
 from workingday_parser.ingest.layout import TextBlock
@@ -11,14 +17,13 @@ from eval.baselines.naive_parser import NaiveParser
 from eval.metrics import compute_field_accuracy
 
 def run_benchmark():
-    case_path = os.path.join(os.path.dirname(__file__), "dataset", "case_1_sri_sourish_reddy.json")
+    case_path = os.path.join(PROJECT_ROOT, "eval", "dataset", "case_1_sri_sourish_reddy.json")
     with open(case_path, "r") as f:
         case_data = json.load(f)
 
     ground_truth = case_data["ground_truth"]
     workday_recorded = case_data["workday_recorded_autofill"]
 
-    # Sample resume raw lines
     from tests.test_full_extraction import SAMPLE_RESUME_TEXT
     lines = [l for l in SAMPLE_RESUME_TEXT.split("\n") if l.strip()]
 
