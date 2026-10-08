@@ -1,0 +1,137 @@
+{
+  "case_id": "case_1_sri_sourish_reddy",
+  "candidate_name": "Sri Satya Sourish Reddy",
+  "ground_truth": {
+    "name": {
+      "given": "Sri Satya Sourish",
+      "family": "Reddy",
+      "middle": null,
+      "convention": "given-first"
+    },
+    "contact": {
+      "email": "reddysourish@gmail.com",
+      "phone": "(469)-970-9045"
+    },
+    "address": {
+      "line1": null,
+      "line2": null,
+      "city": "Plano",
+      "state": "TX",
+      "postal": "75025",
+      "country": "United States"
+    },
+    "links": {
+      "linkedin": "https://linkedin.com/in/sri-satya-sourish-reddy/",
+      "github": "https://github.com/Insight14"
+    },
+    "education": [
+      {
+        "school": "The University of Texas at Dallas",
+        "degree": "Bachelor's",
+        "field": "Computer Science",
+        "minor": "Data Science & A.I",
+        "start": null,
+        "end": "2027-12"
+      }
+    ],
+    "experience": [
+      {
+        "title": "AI/ML Intern",
+        "company": "Handshake AI",
+        "location": null,
+        "start": "2026-05",
+        "end": null,
+        "current": true,
+        "bullet_count": 2
+      },
+      {
+        "title": "Undergraduate Research Assistant",
+        "company": "The University of Texas at Dallas",
+        "location": null,
+        "start": "2026-08",
+        "end": null,
+        "current": true,
+        "bullet_count": 2
+      },
+      {
+        "title": "Instructor",
+        "company": "iCode",
+        "location": "North Dallas",
+        "start": "2025-10",
+        "end": null,
+        "current": true,
+        "bullet_count": 2
+      },
+      {
+        "title": "Technology Officer & Project Mentor",
+        "company": "Google Developer Student Club",
+        "location": null,
+        "start": "2026-01",
+        "end": null,
+        "current": true,
+        "bullet_count": 2
+      }
+    ],
+    "projects_count": 4
+  },
+  "workday_recorded_autofill": {
+    "name": {
+      "given": "Sri",
+      "family": "Reddy",
+      "middle": "Satya Sourish"
+    },
+    "contact": {
+      "email": "reddysourish@gmail.com",
+      "phone": "(469)-970-9045"
+    },
+    "address": {
+      "line1": "14 AMresumepdf",
+      "line2": null,
+      "city": null,
+      "state": null,
+      "postal": null,
+      "country": "United States"
+    },
+    "links": {
+      "linkedin": null,
+      "github": null
+    },
+    "education": [
+      {
+        "school": null,
+        "degree": "Bachelor's Degree",
+        "field": "Computer Science",
+        "minor": null,
+        "start": null,
+        "end": null
+      }
+    ],
+    "experience": [
+      {
+        "title": "AI/ML Intern",
+        "company": null,
+        "location": "AI",
+        "start": null,
+        "end": null,
+        "current": true
+      },
+      {
+        "title": "Instructor",
+        "company": null,
+        "location": null,
+        "start": null,
+        "end": null,
+        "current": true
+      },
+      {
+        "title": "Technology Officer & Project Mentor",
+        "company": "Google",
+        "location": null,
+        "start": null,
+        "end": null,
+        "current": true
+      }
+    ],
+    "projects_count": 0
+  }
+}

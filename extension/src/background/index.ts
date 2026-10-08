@@ -1,0 +1,9 @@
+// WorkingDay Background Service Worker
+
+chrome.runtime.onInstalled.addListener(() => {
+  console.log("WorkingDay extension installed successfully.");
+  chrome.storage.local.set({
+    parserApiUrl: 'http://localhost:8000',
+    enabledSites: ['localhost', 'myworkdayjobs.com', 'workday.com']
+  });
+});

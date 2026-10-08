@@ -1,0 +1,27 @@
+[project]
+name = "workingday-parser"
+version = "0.1.0"
+description = "Candidate-side resume parser with high precision for Workday job applications"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn>=0.28.0",
+    "pydantic>=2.6.0",
+    "pymupdf>=1.23.0",
+    "pdfplumber>=0.10.0",
+    "python-docx>=1.1.0",
+    "nameparser>=2.1.0",
+    "rapidfuzz>=3.6.0",
+    "python-multipart>=0.0.9",
+    "httpx>=0.27.0",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+asyncio_mode = "auto"

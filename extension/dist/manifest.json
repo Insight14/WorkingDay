@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "WorkingDay - High Precision Workday Autofill",
+  "version": "0.1.0",
+  "description": "Candidate-side high precision autofill for Workday-style job applications.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "WorkingDay Autofill"
+  },
+  "background": {
+    "service_worker": "src/background/index.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://localhost/*",
+        "http://127.0.0.1/*",
+        "https://*.myworkdayjobs.com/*",
+        "https://*.workday.com/*",
+        "https://*/*"
+      ],
+      "js": ["src/content/index.ts"],
+      "run_at": "document_end"
+    }
+  ]
+}
