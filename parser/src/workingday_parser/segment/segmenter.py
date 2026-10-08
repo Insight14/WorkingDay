@@ -17,7 +17,7 @@ class SectionType(str, Enum):
 
 SECTION_HEADER_PATTERNS = [
     (r'^(education|academic background|academic history)$', SectionType.EDUCATION),
-    (r'^(experience|work experience|employment history|professional experience|internships?)$', SectionType.EXPERIENCE),
+    (r'^(experience|work experience|employment history|professional experience|internships?|work history)$', SectionType.EXPERIENCE),
     (r'^(technical skills|skills|technologies|core competencies|skills & abilities)$', SectionType.SKILLS),
     (r'^(projects|personal projects|key projects|academic projects)$', SectionType.PROJECTS),
     (r'^(summary|professional summary|about me|profile)$', SectionType.SUMMARY),
@@ -35,9 +35,12 @@ class SegmentedSection(BaseModel):
         return "\n".join(b.full_text for b in self.blocks)
 
 
-def is_heading_block(block: TextBlock, max_page_font: float = 12.0) -> Optional[SectionType]:
-    text = block.full_text.strip()
-    if not text or len(text) > 50:  # Section headings are short
+def is_heading_line(line: str) -> Optional[SectionType]:
+    """
+    Checks if a single line is a section heading.
+    """
+    text = line.strip()
+    if not text or len(text) > 40:
         return None
 
     cleaned = re.sub(r'[^a-zA-Z\s&]', '', text).strip().lower()
@@ -51,45 +54,41 @@ def is_heading_block(block: TextBlock, max_page_font: float = 12.0) -> Optional[
 
 def segment_blocks(blocks: List[TextBlock]) -> Dict[SectionType, SegmentedSection]:
     """
-    Segments document blocks into structured sections.
-    The first block(s) prior to the first major heading are classified as HEADER.
+    Segments document blocks into structured sections with line-level accuracy.
+    Splits multi-line blocks whenever an internal heading line is encountered.
     """
     sections: Dict[SectionType, SegmentedSection] = {}
     
     current_type = SectionType.HEADER
     current_heading: Optional[str] = None
-    current_blocks: List[TextBlock] = []
+    current_lines: List[str] = []
+
+    def commit_section():
+        if current_lines:
+            new_block = TextBlock(lines=list(current_lines), bbox=(0, 0, 500, float(len(current_lines) * 20)))
+            if current_type not in sections:
+                sections[current_type] = SegmentedSection(
+                    section_type=current_type,
+                    heading_text=current_heading,
+                    blocks=[new_block]
+                )
+            else:
+                sections[current_type].blocks.append(new_block)
 
     for block in blocks:
-        heading_type = is_heading_block(block)
-        if heading_type:
-            # Save previous section
-            if current_blocks:
-                if current_type not in sections:
-                    sections[current_type] = SegmentedSection(
-                        section_type=current_type,
-                        heading_text=current_heading,
-                        blocks=current_blocks
-                    )
-                else:
-                    sections[current_type].blocks.extend(current_blocks)
-            
-            # Start new section
-            current_type = heading_type
-            current_heading = block.full_text.strip()
-            current_blocks = []
-        else:
-            current_blocks.append(block)
+        for line in block.lines:
+            clean_l = line.strip()
+            if not clean_l:
+                continue
 
-    # Save remaining blocks
-    if current_blocks:
-        if current_type not in sections:
-            sections[current_type] = SegmentedSection(
-                section_type=current_type,
-                heading_text=current_heading,
-                blocks=current_blocks
-            )
-        else:
-            sections[current_type].blocks.extend(current_blocks)
+            heading_match = is_heading_line(clean_l)
+            if heading_match:
+                commit_section()
+                current_type = heading_match
+                current_heading = clean_l
+                current_lines = []
+            else:
+                current_lines.append(clean_l)
 
+    commit_section()
     return sections

@@ -15,11 +15,6 @@ from ..rules.experience import build_experience_item, DATE_RANGE_REGEX
 from ..llm.interface import LLMExtractorInterface, MockLLMExtractor
 
 def extract_skills_dict(skills_text: str) -> Dict[str, List[str]]:
-    """
-    Parses categorized skills lines:
-    e.g., 'Front End | React.js, Next.js, Node.js, Vue...'
-    'Back End | Python, Java, C++, R, SQL...'
-    """
     skills: Dict[str, List[str]] = {}
     lines = [l.strip() for l in skills_text.split("\n") if l.strip()]
     for line in lines:
@@ -37,10 +32,6 @@ def extract_skills_dict(skills_text: str) -> Dict[str, List[str]]:
 
 
 def extract_projects_list(blocks: List[TextBlock]) -> List[ProjectItem]:
-    """
-    Extracts structured projects and their bullets.
-    e.g., 'Project | Uber Stall Guard Personal Project'
-    """
     projects: List[ProjectItem] = []
     lines: List[str] = []
     for b in blocks:
@@ -66,13 +57,11 @@ def extract_projects_list(blocks: List[TextBlock]) -> List[ProjectItem]:
         if not stripped:
             continue
 
-        # Check project header pattern: e.g. "Project | Title [Category]" or "Title - Category"
         if stripped.lower().startswith("project |") or (re.search(r'\b(personal project|group project|academic project)\b', stripped, re.IGNORECASE) and not is_bullet_start(stripped)):
             commit_project()
             current_raw_bullets = []
             
             clean_proj = re.sub(r'^Project\s*\|\s*', '', stripped, flags=re.IGNORECASE).strip()
-            # Check if category is at end: e.g. "Uber Stall Guard Personal Project"
             cat_match = re.search(r'\b(Personal Project|Group Project|Academic Project|Open Source)\b', clean_proj, re.IGNORECASE)
             if cat_match:
                 current_category = cat_match.group(0).strip()
@@ -90,6 +79,7 @@ def extract_projects_list(blocks: List[TextBlock]) -> List[ProjectItem]:
 def extract_experience_list(blocks: List[TextBlock]) -> List[ExperienceItem]:
     """
     Extracts experience items and groups bullets under job headers.
+    Supports both single-line ('Title - Company Date') and multi-line ('Title - Company\nDate') headers.
     """
     items: List[ExperienceItem] = []
     all_lines: List[str] = []
@@ -100,36 +90,53 @@ def extract_experience_list(blocks: List[TextBlock]) -> List[ExperienceItem]:
     current_bullet_lines: List[str] = []
 
     def commit_exp():
-        if current_header:
+        if current_header and current_header.strip():
             bullets = rebuild_bullet_list(current_bullet_lines)
             exp_item = build_experience_item(current_header, bullets)
-            items.append(exp_item)
+            if exp_item.company.value or exp_item.title.value:
+                items.append(exp_item)
 
-    for line in all_lines:
-        stripped = line.strip()
-        if not stripped:
+    i = 0
+    while i < len(all_lines):
+        line = all_lines[i].strip()
+        if not line:
+            i += 1
             continue
 
-        # If line contains dates (e.g., "May 2026 - Present") and is not a bullet
-        if (DATE_RANGE_REGEX.search(stripped) or ("present" in stripped.lower() and ("-" in stripped or "–" in stripped))) and not is_bullet_start(stripped):
-            commit_exp()
-            current_header = stripped
-            current_bullet_lines = []
+        # Check if line is a date or contains date range
+        has_date = bool(DATE_RANGE_REGEX.search(line) or ("present" in line.lower() and ("-" in line or "–" in line or "to" in line.lower())))
+        is_bullet = is_bullet_start(line)
+
+        if not is_bullet:
+            if has_date:
+                # If current_header already exists and has NO date, merge this date line into it!
+                if current_header and not DATE_RANGE_REGEX.search(current_header) and "present" not in current_header.lower():
+                    current_header = f"{current_header} {line}"
+                else:
+                    commit_exp()
+                    current_header = line
+                    current_bullet_lines = []
+            elif " - " in line or " – " in line or " | " in line or re.search(r'\b(intern|engineer|developer|assistant|officer|mentor|instructor|specialist|manager|lead|director|analyst|associate)\b', line, re.IGNORECASE):
+                # Likely a title/company line
+                commit_exp()
+                current_header = line
+                current_bullet_lines = []
+            else:
+                if current_header:
+                    current_bullet_lines.append(line)
+                else:
+                    current_header = line
         else:
             if current_header:
-                current_bullet_lines.append(stripped)
-            else:
-                # If experience section starts without date in first line
-                current_header = stripped
+                current_bullet_lines.append(line)
+
+        i += 1
 
     commit_exp()
     return items
 
 
 def extract_education_list(blocks: List[TextBlock]) -> List[EducationItem]:
-    """
-    Extracts education items.
-    """
     items: List[EducationItem] = []
     all_lines: List[str] = []
     for b in blocks:
@@ -143,12 +150,9 @@ def extract_education_list(blocks: List[TextBlock]) -> List[EducationItem]:
             continue
 
         next_line = all_lines[i+1].strip() if i + 1 < len(all_lines) else None
-        
-        # Parse education block
         edu = parse_education_block(line, next_line)
         items.append(edu)
         
-        # If next line was consumed as part of degree/details
         if next_line and (re.search(r'\b(bachelor|master|phd|bs|ms|degree|in\s+computer)\b', next_line, re.IGNORECASE)):
             i += 2
         else:
@@ -174,16 +178,13 @@ class WorkingDayExtractor:
         header_text = header_sec.raw_text if header_sec else ""
         header_lines = [l.strip() for l in header_text.split("\n") if l.strip()]
 
-        # All text across resume for link extraction & fallback
         full_resume_text = "\n".join(b.full_text for b in blocks)
 
         email, phone = extract_contact_info(header_text or full_resume_text)
         links = extract_links_from_text_and_uris(header_text or full_resume_text, annotation_links)
 
-        # Name is usually the first non-contact line in header
         raw_name = ""
         for line in header_lines:
-            # Skip lines with email, phone, or pure dates
             if "@" in line or (re.search(r'\d{3}', line) and "|" in line):
                 continue
             if re.search(r'^[A-Za-z\s.,\'-]+$', line) and len(line.split()) >= 2:
