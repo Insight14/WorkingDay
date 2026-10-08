@@ -17,7 +17,7 @@
     "default_title": "WorkingDay Autofill"
   },
   "background": {
-    "service_worker": "src/background/index.ts",
+    "service_worker": "src/background/index.js",
     "type": "module"
   },
   "content_scripts": [
@@ -29,7 +29,7 @@
         "https://*.workday.com/*",
         "https://*/*"
       ],
-      "js": ["src/content/index.ts"],
+      "js": ["src/content/index.js"],
       "run_at": "document_end"
     }
   ]
